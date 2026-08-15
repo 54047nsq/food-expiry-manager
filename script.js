@@ -120,7 +120,36 @@ function renderFoods() {
     if (daysLeft < 0) status.classList.add("expired");
 
     details.append(name, date);
-    listItem.append(details, status);
+    
+    const actions = document.createElement("div");
+const soldButton = document.createElement("button");
+const processedButton = document.createElement("button");
+
+actions.className = "item-actions";
+
+soldButton.type = "button";
+soldButton.textContent = "販売済み";
+
+processedButton.type = "button";
+processedButton.textContent = "処理済み";
+    
+soldButton.addEventListener("click", () => {
+  const index = foods.indexOf(food);
+  if (index !== -1) {
+    foods.splice(index, 1);
+    renderFoods();
+  }
+});
+
+processedButton.addEventListener("click", () => {
+  const index = foods.indexOf(food);
+  if (index !== -1) {
+    foods.splice(index, 1);
+    renderFoods();
+  }
+});
+    actions.append(soldButton, processedButton);
+listItem.append(details, status, actions);
     foodList.append(listItem);
   });
 
