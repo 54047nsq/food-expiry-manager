@@ -48,6 +48,10 @@ function parseCsv(text) {
   return rows;
 }
 
+function normalizeBarcode(value) {
+  return String(value).replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+}
+
 async function loadProductCatalog() {
   const response = await fetch(encodeURI(PRODUCT_CSV_PATH), { cache: "no-cache" });
   if (!response.ok) throw new Error("Product CSV could not be loaded");
@@ -60,7 +64,7 @@ async function loadProductCatalog() {
   rows.forEach((row) => {
     const code = row[codeColumn]?.trim();
     const name = row[nameColumn]?.trim();
-    if (code && name) productNamesByCode.set(code, name);
+    if (code && name) productNamesByCode.set(normalizeBarcode(code), name);
   });
 }
 
@@ -149,7 +153,7 @@ async function fillProductName(barcode) {
 
   try {
     await productCatalogPromise;
-    const csvProductName = productNamesByCode.get(String(barcode).trim());
+    const csvProductName = productNamesByCode.get(normalizeBarcode(barcode));
 
     if (csvProductName) {
       productNameInput.value = csvProductName;
@@ -166,7 +170,7 @@ async function fillProductName(barcode) {
     const product = data.product || {};
     const productName = product.product_name_ja || product.product_name || product.brands;
 
-    if (productName) {
+    if (productName && !productName.includes("\uFFFD")) {
       productNameInput.value = productName.trim();
       scanStatus.textContent = `「${productNameInput.value}」を商品名に入力しました。`;
     } else {
