@@ -176,56 +176,7 @@ async function startScanner() {
     return;
   }
 
-  if (!("BarcodeDetector" in window)) {
-    await startZxingScanner();
-    return;
-  }
-
-  try {
-    scanButton.disabled = true;
-    scanStatus.textContent = "カメラを起動しています…";
-    const supportedFormats = await BarcodeDetector.getSupportedFormats();
-    const preferredFormats = ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"];
-    const formats = preferredFormats.filter((format) => supportedFormats.includes(format));
-    const detector = new BarcodeDetector(formats.length ? { formats } : undefined);
-
-    cameraStream = await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: { facingMode: { ideal: "environment" } },
-    });
-    cameraPreview.srcObject = cameraStream;
-    scanner.hidden = false;
-    await cameraPreview.play();
-    scanStatus.textContent = "バーコードを枠の中央に合わせてください。";
-
-    const detectFrame = async () => {
-      if (!cameraStream) return;
-
-      if (!isDetecting && cameraPreview.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-        isDetecting = true;
-        try {
-          const barcodes = await detector.detect(cameraPreview);
-          if (barcodes.length > 0) {
-            const barcode = barcodes[0].rawValue;
-            stopScanner();
-            await fillProductName(barcode);
-            return;
-          }
-        } catch (error) {
-          scanStatus.textContent = "読み取り中です。バーコードを明るい場所で枠に合わせてください。";
-        } finally {
-          isDetecting = false;
-        }
-      }
-
-      scanTimer = requestAnimationFrame(detectFrame);
-    };
-
-    detectFrame();
-  } catch (error) {
-    stopScanner();
-    scanStatus.textContent = "カメラを起動できませんでした。ブラウザのカメラ許可を確認してください。";
-  }
+  await startZxingScanner();
 }
 
 async function startZxingScanner() {
