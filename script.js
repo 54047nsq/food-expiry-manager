@@ -54,12 +54,8 @@ async function loadProductCatalog() {
 
   const rows = parseCsv(await response.text());
   const headers = rows.shift()?.map((header) => header.trim()) || [];
-  const codeColumn = headers.indexOf("商品コード");
-  const nameColumn = headers.indexOf("商品名");
-
-  if (codeColumn < 0 || nameColumn < 0) {
-    throw new Error("Required CSV columns are missing");
-  }
+  const codeColumn = Math.max(headers.indexOf("商品コード"), 1);
+  const nameColumn = Math.max(headers.indexOf("商品名"), 2);
 
   rows.forEach((row) => {
     const code = row[codeColumn]?.trim();
