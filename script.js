@@ -10,7 +10,7 @@ const scanner = document.querySelector("#scanner");
 const cameraPreview = document.querySelector("#camera-preview");
 const scanStatus = document.querySelector("#scan-status");
 
-const PRODUCT_CSV_PATH = "商品データ(20260815154701).csv";
+const PRODUCT_CSV_PATH = "products_utf8.csv";
 const productNamesByCode = new Map();
 
 function parseCsv(text) {
