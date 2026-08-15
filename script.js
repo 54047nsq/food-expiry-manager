@@ -149,7 +149,7 @@ function stopScanner() {
 }
 
 async function fillProductName(barcode) {
-  scanStatus.textContent = `バーコード ${barcode} を読み取りました。商品情報を確認しています…`;
+  scanStatus.textContent = "バーコード " + barcode + " を読み取りました。商品情報を確認しています…";
 
   try {
     await productCatalogPromise;
@@ -158,28 +158,13 @@ async function fillProductName(barcode) {
     if (csvProductName) {
       productNameInput.value = csvProductName;
       scanStatus.textContent = "「" + csvProductName + "」を商品名に入力しました。";
-      productNameInput.focus();
-      return;
-    }
-
-    const endpoint = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json?fields=product_name_ja,product_name,brands`;
-    const response = await fetch(endpoint);
-    if (!response.ok) throw new Error("Product lookup failed");
-
-    const data = await response.json();
-    const product = data.product || {};
-    const productName = product.product_name_ja || product.product_name || product.brands;
-
-    if (productName && !productName.includes("\uFFFD")) {
-      productNameInput.value = productName.trim();
-      scanStatus.textContent = `「${productNameInput.value}」を商品名に入力しました。`;
     } else {
-      productNameInput.value = `バーコード ${barcode}`;
-      scanStatus.textContent = "商品名が見つからなかったため、バーコード番号を入力しました。必要に応じて修正してください。";
+      productNameInput.value = "バーコード " + barcode;
+      scanStatus.textContent = "CSVに商品コード " + barcode + " が見つかりませんでした。";
     }
   } catch (error) {
-    productNameInput.value = `バーコード ${barcode}`;
-    scanStatus.textContent = "商品情報を取得できなかったため、バーコード番号を入力しました。インターネット接続を確認してください。";
+    productNameInput.value = "バーコード " + barcode;
+    scanStatus.textContent = "商品CSVを読み込めませんでした。";
   }
 
   productNameInput.focus();
