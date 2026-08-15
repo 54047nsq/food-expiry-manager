@@ -10,6 +10,66 @@ const scanner = document.querySelector("#scanner");
 const cameraPreview = document.querySelector("#camera-preview");
 const scanStatus = document.querySelector("#scan-status");
 
+const PRODUCT_CSV_PATH = "商品データ(20260815154701).csv";
+const productNamesByCode = new Map();
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let quoted = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+
+    if (character === '"') {
+      if (quoted && text[index + 1] === '"') {
+        field += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (character === "," && !quoted) {
+      row.push(field);
+      field = "";
+    } else if ((character === "\n" || character === "\r") && !quoted) {
+      if (character === "\r" && text[index + 1] === "\n") index += 1;
+      row.push(field);
+      if (row.some((value) => value !== "")) rows.push(row);
+      row = [];
+      field = "";
+    } else {
+      field += character;
+    }
+  }
+
+  row.push(field);
+  if (row.some((value) => value !== "")) rows.push(row);
+  return rows;
+}
+
+async function loadProductCatalog() {
+  const response = await fetch(encodeURI(PRODUCT_CSV_PATH), { cache: "no-cache" });
+  if (!response.ok) throw new Error("Product CSV could not be loaded");
+
+  const rows = parseCsv(await response.text());
+  const headers = rows.shift()?.map((header) => header.trim()) || [];
+  const codeColumn = headers.indexOf("商品コード");
+  const nameColumn = headers.indexOf("商品名");
+
+  if (codeColumn < 0 || nameColumn < 0) {
+    throw new Error("Required CSV columns are missing");
+  }
+
+  rows.forEach((row) => {
+    const code = row[codeColumn]?.trim();
+    const name = row[nameColumn]?.trim();
+    if (code && name) productNamesByCode.set(code, name);
+  });
+}
+
+const productCatalogPromise = loadProductCatalog();
+
 const foods = [];
 let cameraStream = null;
 let scanTimer = null;
@@ -92,6 +152,16 @@ async function fillProductName(barcode) {
   scanStatus.textContent = `バーコード ${barcode} を読み取りました。商品情報を確認しています…`;
 
   try {
+    await productCatalogPromise;
+    const csvProductName = productNamesByCode.get(String(barcode).trim());
+
+    if (csvProductName) {
+      productNameInput.value = csvProductName;
+      scanStatus.textContent = "「" + csvProductName + "」を商品名に入力しました。";
+      productNameInput.focus();
+      return;
+    }
+
     const endpoint = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json?fields=product_name_ja,product_name,brands`;
     const response = await fetch(endpoint);
     if (!response.ok) throw new Error("Product lookup failed");
